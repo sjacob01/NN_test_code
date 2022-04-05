@@ -84,13 +84,6 @@ def back_prop_step(Z1,A1,Z2,A2,Z3,A3,W3,W2,X,Y):
     return dW1,db1,dW2,db2,dW3,db3
 
 
-        # # Calculate W3 update
-        # error = 2 * (output - y_train) / output.shape[0] * self.softmax(params['Z3'], derivative=True)
-        # change_w['W3'] = np.outer(error, params['A2'])
-
-        
-
-
 def update_params(W1,b1,W2,b2,W3,b3,dW1,db1,dW2,db2,dW3,db3,learning_rate):
     
     W1 = W1 - learning_rate * dW1
