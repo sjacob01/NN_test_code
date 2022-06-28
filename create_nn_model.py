@@ -60,12 +60,19 @@ Model_test_data = tf.keras.utils.normalize(Model_test_data,axis=1)
 model = tf.keras.models.Sequential()
 model.add(tf.keras.layers.Flatten())
 
-model.add(tf.keras.layers.Dense(588, activation=tf.nn.relu,name="hidden_1"))
-model.add(tf.keras.layers.Dense(392, activation=tf.nn.relu,name="hidden_2"))
-model.add(tf.keras.layers.Dense(196, activation=tf.nn.relu,name="hidden_3"))
-model.add(tf.keras.layers.Dense(64, activation=tf.nn.relu,name="hidden_4"))
-model.add(tf.keras.layers.Dense(32, activation=tf.nn.relu,name="hidden_5"))
-model.add(tf.keras.layers.Dense(10, activation=tf.nn.softmax,name="hidden_6"))
+nn_layers = int(input("Enter the number of layers desired: "))
+index = 0
+
+while index < nn_layers:
+    nodes = input("Enter the desired number of nodes for layer_" + str(index+1) +": ")
+    print(nodes)
+    layer_name = "hidden_"+str(index+1)
+    model.add(tf.keras.layers.Dense(str(nodes), activation=tf.nn.relu,name=layer_name))
+    index +=1
+else:
+    layer_name = "hidden_"+str(index+1)
+    model.add(tf.keras.layers.Dense(10, activation=tf.nn.softmax,name=layer_name))
+
 
 model.compile(optimizer='sgd',loss='sparse_categorical_crossentropy',metrics='accuracy')
 
