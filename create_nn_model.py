@@ -1,25 +1,17 @@
 # This script creates a basic neural network model using tensorflow data sets
 # June 2022
 
-import pandas as pd
 import tensorflow as tf
 import tensorflow_datasets as tfds
-import numpy as np
-import math
-import pymsgbox
 import os
-import umap
-import umap.plot
 import utils
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
-from matplotlib import pyplot
-from numpy import exp
 from tensorflow.keras.datasets import *
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense
 from sklearn.metrics import accuracy_score
-from keract import get_activations, display_activations, display_heatmaps
+
 
 
 ## ----------------------------------------------------------------------------------------------
