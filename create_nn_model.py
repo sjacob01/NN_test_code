@@ -11,7 +11,7 @@ from tensorflow.keras.datasets import *
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense
 from sklearn.metrics import accuracy_score
-
+from keract import get_activations, display_activations, display_heatmaps
 
 
 ## ----------------------------------------------------------------------------------------------
@@ -57,7 +57,7 @@ index = 0
 
 while index < nn_layers:
     nodes = input("Enter the desired number of nodes for layer_" + str(index+1) +": ")
-    print(nodes)
+   
     layer_name = "hidden_"+str(index+1)
     model.add(tf.keras.layers.Dense(str(nodes), activation=tf.nn.relu,name=layer_name))
     index +=1
