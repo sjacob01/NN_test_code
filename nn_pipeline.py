@@ -119,6 +119,17 @@ def class_indices(index_counter,labels_counter,classes,labels):
             labels_counter.append(label_column)
             
      return index_counter labels_counter
+     
+
+def capture_image_activations(input_data,model,data, nodes);
+        for e in range(len(input_data)):
+        
+        image=input_data[e:e+1]
+        activations = get_activations(model,image)
+        layer_activations = activations[h].T
+        layer_activations = np.reshape(layer_activations,nodes)
+        data.append(layer_activations)
+        return data 
 
 def main():
     
@@ -165,6 +176,7 @@ def main():
     
     #Save the model
     set_path_to_save_model()
+    
     Model_classes = np.unique(Model_training_data_labels))
     print('model classes: ', classes)
 
@@ -180,8 +192,67 @@ def main():
     
     [index_counter labels_counter] = class_indices(index_counter,labels_counter,Adversarial_test_data, Adversarial_test_data_labels)
     
+    capture_activations(nn_layers,model,Model_test_data,Adversarial_test_data,index_counter, labels_counter)
 
 
+
+def capture_activations(nn_layers,model,Model_test_data,Adversarial_test_data):
+
+    for a in range(1,nn_layers):
+        nodes = model.layers[a].output_shape[1]
+        activation_col_names=[]
+        var4 = 'df'
+        var5 = str(a)
+        var6 = var4+var5
+        
+        h = 'hidden_'+ str(a)
+        #Never grow a dataframe
+        data =[]
+        
+        for b in range(nodes):
+            var1 = 'node_'
+            var2 = str(b)
+            var3 = var1+var2
+            activation_col_names.append(var3)
+        
+       capture_image_activations(Model_test_data, model, data,nodes)
+       capture_image_activations(Adversarial_test_data, model, data, nodes)
+       
+       var6 = pd.DataFrame(columns=activation_col_names)   
+    
+       var6 = pd.DataFrame(data)
+       
+       # class_indices_arrays= index_counter[0]+index_counter[1]+index_counter[2]+index_counter[3]+index_counter[4]+index_counter[5]+index_counter[6]+index_counter[7]+index_counter[8]+index_counter[9]\
+        # +index_counter[10]+index_counter[11]+index_counter[12]+index_counter[13]+index_counter[14]+index_counter[15]+index_counter[16]+index_counter[17]+index_counter[18]+index_counter[19]
+        
+       # class_labels_arrays=labels_counter[0]+labels_counter[1]+labels_counter[2]+labels_counter[3]+labels_counter[4]+labels_counter[5]+labels_counter[6]+labels_counter[7]+labels_counter[8]+labels_counter[9]\
+        # +labels_counter[10]+labels_counter[11]+labels_counter[12]+labels_counter[13]+labels_counter[14]+labels_counter[15]+labels_counter[16]+labels_counter[17]+labels_counter[18]+labels_counter[19]
+        
+      
+       
+        # np.save(
+            # file="C:/Users/me/Documents/Python Scripts/NN_activation_results/layer_" +str(c)+"_result_labels.npy",
+            # arr=np.array(class_labels_arrays),
+            # allow_pickle=False,
+            # fix_imports=False,
+            # )
+            
+        # np.save(
+            # file="C:/Users/me/Documents/Python Scripts/NN_activation_results/layer_" +str(c)+"_results.npy",
+            # arr=var6,
+            # allow_pickle=False,
+            # fix_imports=False,
+            # )
+
+
+
+
+
+
+
+   
+ 
+  
     
 
 if __name__ == "__main__":
