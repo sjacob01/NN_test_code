@@ -52,7 +52,7 @@ def fit_model(number_of_epochs, model,Model_training_data,Model_training_data_la
 
 
 
-def set_path_to_save_model():
+def set_path_to_save_model(model):
 # This function enables the user to enter the path where the model is saved to
     print("\n")
     print("Save model to current working directory?")
@@ -109,7 +109,7 @@ def main():
     number_of_epochs = 10 
     fit_model(number_of_epochs, model,Model_training_data,Model_training_data_labels)
     
-    set_path_to_save_model()
+    set_path_to_save_model(model)
 
     
 
