@@ -6,6 +6,11 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 import os
 import utils
+import math
+import umap
+import umap.plot
+from matplotlib import pyplot
+from numpy import exp
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 from tensorflow.keras.datasets import *
@@ -104,17 +109,16 @@ def set_path_to_save_model(model):
     return None
 
 
-def class_indices(index_counter,labels_counter,classes,labels):
-# This function identifies the indices where each class exists in the data set
+def class_indices(index_counter,labels_counter,classes,labels, bias):
+# This function identifies the indices where each class exists in the data set    
      for a in range(len(classes)):   
-            
             column=[]    
             label_column=[]
             
             for b in range(len(labels)):
                 if labels[b]==a:
                     column.append(b)
-                    label_column.append(a)
+                    label_column.append(a+bias)
                     
             index_counter.append(column)
             labels_counter.append(label_column)
@@ -133,10 +137,12 @@ def capture_image_activations(input_data,model,data, nodes,h):
         return data 
 
 
-def cat_array_data(arrays_of_class_data, input_data):
-    for a in range(len(input_data)): 
+def cat_array_data(arrays_of_class_data, input_data, counter): 
+    arrays_of_class_data = input_data[0]
+    
+    for a in range(1,counter): 
         arrays_of_class_data = arrays_of_class_data  + input_data[a]
-    return arrays_of_class_data
+    return arrays_of_class_data 
 
 
 
@@ -162,7 +168,7 @@ def set_path_to_save_file():
 
 
 
-def capture_activations(nn_layers,model,Model_test_data,Adversarial_test_data,index_counter, labels_counter):
+def capture_activations(nn_layers,model,Model_test_data,Adversarial_test_data,index_counter, labels_counter,total_number_of_classes):
 
     for a in range(1,nn_layers):
         nodes = model.layers[a].output_shape[1]
@@ -181,22 +187,24 @@ def capture_activations(nn_layers,model,Model_test_data,Adversarial_test_data,in
             var3 = var1+var2
             activation_col_names.append(var3)
         
-        capture_image_activations(Model_test_data, model, data, nodes,h)
-        capture_image_activations(Adversarial_test_data, model, data, nodes,h)
+        data = capture_image_activations(Model_test_data, model, data, nodes,h)
+        data = capture_image_activations(Adversarial_test_data, model, data, nodes,h)
        
         var6 = pd.DataFrame(columns=activation_col_names)   
     
         var6 = pd.DataFrame(data)
-       
-        arrays_of_class_indices=[]
-        arrays_of_class_indices=cat_array_data(arrays_of_class_indices, index_counter)
-       
-        array_of_class_labels=[]
-        array_of_class_labels=cat_array_data(array_of_class_labels, labels_counter)
-       
-       
+        #print(var6)     
+           
+        arrays_of_class_indices=[]               
+        arrays_of_class_indices = cat_array_data(arrays_of_class_indices, index_counter, total_number_of_classes)
+      
+        array_of_class_labels=[]        
+        array_of_class_labels=cat_array_data(array_of_class_labels, labels_counter, total_number_of_classes)
+               
         path = set_path_to_save_file()
-        print(path)
+       
+        arr=np.array(array_of_class_labels)
+                 
         np.save(
             file=path+ "/layer_" +str(a)+"_result_labels.npy",
             arr=np.array(array_of_class_labels),
@@ -263,22 +271,26 @@ def main():
     
     Model_classes = np.unique(Model_training_data_labels)
     print('model classes: ', Model_classes)
-
+    length_input_1 = len(Model_classes)
+   
     Adversarial_input_classes = np.unique(Adversarial_training_data_labels)
     print('adversarial input classes: ', Adversarial_input_classes)
-
+    
+    length_input_2 = len(Adversarial_input_classes)
+    total_number_of_classes = length_input_1+length_input_2
+     
     index_counter=[]
     labels_counter=[]
     
-    [index_counter ,labels_counter] = class_indices(index_counter,labels_counter, Model_test_data, Model_test_data_labels)
-    
-    [index_counter, labels_counter] = class_indices(index_counter,labels_counter,Adversarial_test_data, Adversarial_test_data_labels)
-    
-    capture_activations(nn_layers,model,Model_test_data,Adversarial_test_data,index_counter, labels_counter)
+    bias =0 
+    [index_counter ,labels_counter] = class_indices(index_counter,labels_counter, Model_classes, Model_test_data_labels,bias)
+   
+    bias =length_input_2
+    [index_counter, labels_counter] = class_indices(index_counter,labels_counter,Adversarial_input_classes, Adversarial_test_data_labels,bias)
+   
+    capture_activations(nn_layers,model,Model_test_data,Adversarial_test_data,index_counter, labels_counter,total_number_of_classes)
 
 
-      
-  
     
 
 if __name__ == "__main__":
