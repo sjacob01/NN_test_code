@@ -114,6 +114,7 @@ def capture_image_activations(input_data,model,data, nodes,h,array_labels,label_
             activations = get_activations(model,image)
             layer_activations = activations[h].T
             layer_activations = np.reshape(layer_activations,nodes)
+            #Najib, this is where I append the activation data and either a 0 or 1 for the label in their respective arrays.
             data.append(layer_activations)
             array_labels.append(label_type)
         return data, array_labels
@@ -174,7 +175,7 @@ def capture_activations(nn_layers,model,Model_test_data,Adversarial_test_data,to
         path = set_path_to_save_file()
         
         array_labels = np.array(array_labels)
-        #Check format of labels
+        #Najib this is where I check format of labels to make sure it is a 1d array, and check the data type
         print(type(array_labels))
         print(array_labels.ndim)
       
