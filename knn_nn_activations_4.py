@@ -20,6 +20,10 @@ from tensorflow.keras.datasets import *
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import classification_report
 from collections import OrderedDict
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, confusion_matrix
+#importing Seaborn's to use the heatmap 
+import seaborn as sns
 
 
 
@@ -141,6 +145,11 @@ def main():
     model = tf.keras.models.Sequential()
     model.add(tf.keras.layers.Flatten())
     
+    Model_classes = np.unique(Model_training_data_labels)
+    print('model classes: ', Model_classes)
+    total_number_of_classes = len(Model_classes)
+    
+    
     nn_layers = int(input("Enter the number of layers desired: "))
 
     for index in range(nn_layers-1):
@@ -159,11 +168,22 @@ def main():
 
     number_of_epochs = 10 
     fit_model(number_of_epochs, model,Model_training_data,Model_training_data_labels)
+    nn_predictions = model.predict(Model_test_data).argmax(axis=1)
+    # print(nn_predictions)
     
-    Model_classes = np.unique(Model_training_data_labels)
-    print('model classes: ', Model_classes)
-    total_number_of_classes = len(Model_classes)
+    print("EVALUATION ON NN TESTING DATA")
+    print(classification_report(Model_test_data_labels, nn_predictions))
+          
     
+    nn_cm = pd.DataFrame(confusion_matrix(Model_test_data_labels, nn_predictions), 
+                      columns=Model_classes, index = Model_classes)
+                      
+    # Seaborn's heatmap to better visualize the confusion matrix
+    sns.heatmap(nn_cm, annot=True, fmt='d', linewidths = 0.30)
+    pyplot.show()
+    
+    
+   
     index_counter=[]
     labels_counter=[]
          
@@ -172,7 +192,6 @@ def main():
     dataframe_dict = OrderedDict()
     [dataframe_dict, layer_nodes] = capture_activations(nn_layers, model, Model_test_data,dataframe_dict, index_counter ,labels_counter)
     
-       
     for c in range(1,nn_layers+1):
             
                 
@@ -187,6 +206,75 @@ def main():
         umap.plot.plt.show()
                 
  
+    ## KNN section
+    
+    # now, let's take 10% of the training data and use that for validation
+    (trainData, valData, trainLabels, valLabels) = train_test_split(Model_training_data,Model_training_data_labels,
+	test_size=0.1, random_state=4)
+
+    # show the sizes of each data split
+    print("training data points: {}".format(len(trainLabels)))
+    print("validation data points: {}".format(len(valLabels)))
+    print("testing data points: {}".format(len(Model_test_data_labels)))
+    
+    # initialize the values of k for our k-Nearest Neighbor classifier along with the
+    # list of accuracies for each value of k
+    kVals = range(1, 20, 2)
+    accuracies = []
+    
+    print(Model_training_data.shape)
+    print(trainData.shape)
+    
+    trainData = trainData.reshape(len(trainData),784)
+    print(trainData.shape)
+    
+    valData = valData.reshape(len(valData),784)
+    print(valData.shape)
+
+    testData = Model_test_data.reshape(len(Model_test_data),784)
+    print(testData.shape)
+    
+    # loop over various values of `k` for the k-Nearest Neighbor classifier
+    for k in range(1, 30, 2):
+        # train the k-Nearest Neighbor classifier with the current value of `k`
+        model = KNeighborsClassifier(n_neighbors=k)
+        model.fit(trainData, trainLabels)
+
+        # evaluate the model and update the accuracies list
+        score = model.score(valData, valLabels)
+        print("k=%d, accuracy=%.2f%%" % (k, score * 100))
+        accuracies.append(score)
+
+    # find the value of k that has the largest accuracy
+    i = int(np.argmax(accuracies))
+    print("k=%d achieved highest accuracy of %.2f%% on validation data" % (kVals[i],
+        accuracies[i] * 100))
+
+    # re-train our classifier using the best k value and predict the labels of the
+    # test data
+    model = KNeighborsClassifier(n_neighbors=kVals[i])
+    model.fit(trainData, trainLabels)
+    #Find the predictions for each layer
+    predictions = model.predict(testData)
+    
+    #Print the size of each class
+    for i in range(len(labels_counter)):
+        var_i = '\nclass_'+str(i)+': '
+        print(var_i,len(labels_counter[i-1])) 
+ 
+    #show a final classification report demonstrating the accuracy of the classifier
+    # for each of the digits
+    print("EVALUATION ON TESTING DATA")
+    print(classification_report(Model_test_data_labels, predictions))
+    
+    
+    
+    cm = pd.DataFrame(confusion_matrix(Model_test_data_labels, predictions), 
+                      columns=Model_classes, index = Model_classes)
+                      
+    # Seaborn's heatmap to better visualize the confusion matrix
+    sns.heatmap(cm, annot=True, fmt='d', linewidths = 0.30)
+    pyplot.show()
 
 
 
