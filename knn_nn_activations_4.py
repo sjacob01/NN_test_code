@@ -17,14 +17,14 @@ from tensorflow.keras.layers import Dense
 from sklearn.metrics import accuracy_score
 from keract import get_activations, display_activations, display_heatmaps
 from tensorflow.keras.datasets import *
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neighbors import KNeighborsClassifier, NearestNeighbors
 from sklearn.metrics import classification_report
 from collections import OrderedDict
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
 #importing Seaborn's to use the heatmap 
 import seaborn as sns
-
+from mlxtend.plotting import plot_decision_regions
 
 
 ## ----------------------------------------------------------------------------------------------
@@ -192,20 +192,21 @@ def main():
     dataframe_dict = OrderedDict()
     [dataframe_dict, layer_nodes] = capture_activations(nn_layers, model, Model_test_data,dataframe_dict, index_counter ,labels_counter)
     
-    for c in range(1,nn_layers+1):
+    # for c in range(1,nn_layers+1):
             
                 
-        v= index_counter[0]+index_counter[1]+index_counter[2]+index_counter[3]+index_counter[4]+index_counter[5]+index_counter[6]+index_counter[7]+index_counter[8]+index_counter[9]
-        v_label=labels_counter[0]+labels_counter[1]+labels_counter[2]+labels_counter[3]+labels_counter[4]+labels_counter[5]+labels_counter[6]+labels_counter[7]+labels_counter[8]+labels_counter[9]
-        arr=np.array(v_label)
+        # v= index_counter[0]+index_counter[1]+index_counter[2]+index_counter[3]+index_counter[4]+index_counter[5]+index_counter[6]+index_counter[7]+index_counter[8]+index_counter[9]
+        # v_label=labels_counter[0]+labels_counter[1]+labels_counter[2]+labels_counter[3]+labels_counter[4]+labels_counter[5]+labels_counter[6]+labels_counter[7]+labels_counter[8]+labels_counter[9]
+        # arr=np.array(v_label)
         
-        mapper = umap.UMAP().fit(dataframe_dict[c].iloc[v])        
-        p=umap.plot.points(mapper, labels=arr,color_key_cmap='Paired', background='black')
-        var7 = 'Layer_'+str(c)+'_nodes_'+str(layer_nodes[c-1])
-        umap.plot.plt.title(var7)
-        umap.plot.plt.show()
+        # mapper = umap.UMAP().fit(dataframe_dict[c].iloc[v])        
+        # p=umap.plot.points(mapper, labels=arr,color_key_cmap='Paired', background='black')
+        # var7 = 'Layer_'+str(c)+'_nodes_'+str(layer_nodes[c-1])
+        # umap.plot.plt.title(var7)
+        # umap.plot.plt.show()
                 
  
+ # ---------------------------------------------------------------------------------------------------------
     ## KNN section
     
     # now, let's take 10% of the training data and use that for validation
@@ -254,7 +255,9 @@ def main():
     # test data
     model = KNeighborsClassifier(n_neighbors=kVals[i])
     model.fit(trainData, trainLabels)
+    
     #Find the predictions for each layer
+    #predictions = model.predict(dataframe_dict[1])
     predictions = model.predict(testData)
     
     #Print the size of each class
@@ -276,7 +279,13 @@ def main():
     sns.heatmap(cm, annot=True, fmt='d', linewidths = 0.30)
     pyplot.show()
 
-
+    arr = dataframe_dict[1].to_numpy()
+    neigh = KNeighborsClassifier(n_neighbors=kVals[i])
+    neigh.fit(dataframe_dict[1], Model_test_data_labels)
+    #plot_decision_regions(arr, Model_test_data_labels, clf=clf, legend = 10)
+    neigh2 = NearestNeighbors(n_neighbors=kVals[i])
+    neigh2.fit(dataframe_dict[1])
+    print(neigh2.kneighbors(dataframe_dict[1], return_distance=False))
 
 
 if  __name__ == "__main__":
