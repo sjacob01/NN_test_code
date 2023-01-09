@@ -15,6 +15,7 @@ from numpy import exp
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense
 from sklearn.metrics import accuracy_score
+from sklearn.decomposition import PCA
 from keract import get_activations, display_activations, display_heatmaps
 from tensorflow.keras.datasets import *
 from sklearn.neighbors import KNeighborsClassifier, NearestNeighbors
@@ -127,6 +128,47 @@ def capture_activations(nn_layers, model, Model_test_data, dataframe_dict,index_
     return dataframe_dict, layer_nodes
        
 
+def determine_pca_components( Model_training_data, Model_test_data):
+    #This function reduces the dimensionality of the data
+    Model_training_data = np.reshape(Model_training_data, (-1, 784))
+    Model_test_data = np.reshape(Model_test_data, (-1, 784))
+    
+    pca_784 = PCA(n_components=784)
+    pca_784.fit(Model_training_data)
+
+    pyplot.grid()
+    pyplot.plot(np.cumsum(pca_784.explained_variance_ratio_ * 100))
+    pyplot.xlabel('Number of components')
+    pyplot.ylabel('Explained variance')
+    pyplot.show()
+    
+    pyplot.style.use("ggplot") 
+    pyplot.plot(pca_784.explained_variance_, marker='o')
+    pyplot.xlabel("Eigenvalue number")
+    pyplot.ylabel("Eigenvalue size")
+    pyplot.title("Scree Plot")
+    pyplot.show()
+    
+    pca_components = input("Based on the Skree plot, enter the desired number of pca_components: ")
+    
+    pca_components = int(pca_components)
+    print(pca_components)
+    n_pca_components = PCA(n_components = pca_components)
+    n_pca_components.fit(Model_training_data)
+    reduced_Model_training_data = n_pca_components.transform(Model_training_data)
+    reduced_Model_testing_data = n_pca_components.transform(Model_test_data)
+    
+    # get exact variability retained
+    print("\nVar retained (%):", 
+      np.sum(n_pca_components.explained_variance_ratio_ * 100))
+      
+    # verify shape after PCA
+    print("Train images shape:", reduced_Model_training_data.shape)
+    print("Test images shape: ", reduced_Model_testing_data.shape)
+
+    
+    return reduced_Model_training_data, reduced_Model_testing_data
+
 
 def main():
     
@@ -141,6 +183,9 @@ def main():
 
     Model_training_data = tf.keras.utils.normalize(Model_training_data,axis=1)
     Model_test_data = tf.keras.utils.normalize(Model_test_data,axis=1)
+   
+    # Add in PCA functionality
+    [Model_training_data, Model_test_data] = determine_pca_components(Model_training_data,Model_test_data)
    
     model = tf.keras.models.Sequential()
     model.add(tf.keras.layers.Flatten())
