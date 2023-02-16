@@ -191,49 +191,8 @@ def capture_activations(nn_layers, model, model_test_data, dataframe_dict,index_
     return dataframe_dict, layer_nodes
 
 
-def determine_pca_components(model_training_data, model_test_data, model_validation_data):
-    #This function reduces the dimensionality of the data
 
-
-    pca_784 = PCA(n_components=784)
-    pca_784.fit(model_training_data)
-
-    pyplot.grid()
-    pyplot.plot(np.cumsum(pca_784.explained_variance_ratio_ * 100))
-    pyplot.xlabel('Number of components')
-    pyplot.ylabel('Explained variance')
-    pyplot.show()
-
-    pyplot.style.use("ggplot") 
-    pyplot.plot(pca_784.explained_variance_, marker='o')
-    pyplot.xlabel("Eigenvalue number")
-    pyplot.ylabel("Eigenvalue size")
-    pyplot.title("Scree Plot")
-    pyplot.show()
-
-    pca_components = input("Based on the Skree plot, enter the desired number of pca_components: ")
-
-    pca_components = int(pca_components)
-    print(pca_components)
-    n_pca_components = PCA(n_components = pca_components)
-    n_pca_components.fit(model_training_data)
-    reduced_Model_training_data = n_pca_components.transform(model_training_data)
-    reduced_Model_testing_data = n_pca_components.transform(model_test_data)
-    reduced_Model_validation_data = n_pca_components.transform(model_validation_data)
-
-    # get exact variability retained
-    print("\nVar retained (%):", 
-      np.sum(n_pca_components.explained_variance_ratio_ * 100))
-
-    # verify shape after PCA
-    print("Train images shape:", reduced_Model_training_data.shape)
-    print("Test images shape: ", reduced_Model_testing_data.shape)
-    print("Validation images shape: ", reduced_Model_validation_data.shape)
-
-
-    return reduced_Model_training_data, reduced_Model_testing_data, reduced_Model_validation_data
-
-def create_model():
+def create_nn_model():
     #Build the model
     model = tf.keras.models.Sequential()
     model.add(tf.keras.layers.Flatten())
@@ -253,7 +212,7 @@ def create_model():
     print(layer_name)
 
    
-    return model
+    return model, nn_layers
 
 
 
@@ -267,11 +226,13 @@ def main():
     tf.random.set_seed(10)
 
     (Model_training_data, Model_training_data_labels), (Model_test_data, Model_test_data_labels) = eval(tfds.list_builders()[dataset_to_model]+'.load_data()')
- 
+    print(Model_training_data.shape)
+    print(type(Model_training_data))
     Model_classes = np.unique(Model_training_data_labels)
     print('model classes: ', Model_classes)
     total_number_of_classes = len(Model_classes)
     
+ 
     (Model_training_data, valData, Model_training_data_labels, valLabels) = train_test_split(Model_training_data,Model_training_data_labels,
 	test_size=0.4, random_state=4)
  
@@ -283,6 +244,7 @@ def main():
     print("adversarial data points: {}".format(len(advLabels)))
     print("testing data points: {}".format(len(Model_test_data_labels)))
  
+    
     Model_training_data = Model_training_data/255.0
     advData=advData/255.0
     Model_test_data = Model_test_data/255.0
@@ -314,7 +276,7 @@ def main():
 
 #---------Build Basic NN model---------------------------------------------------------------------------------
    
-    model= create_model()
+    [model, nn_layers]= create_nn_model()
     model.compile(optimizer='sgd',loss='sparse_categorical_crossentropy',metrics='accuracy')
     
     number_of_epochs = 15 
@@ -341,21 +303,26 @@ def main():
     pyplot.show()
 
 #---------------------------------------------------------------------------------
+  
 #---------------------------------------------------------------------------------
 # Create an adversarial image using the CNN model
+    adv_arr = [] 
    # get the current image and label
-    for i in range(1,3):
+    for i in range(len(advData)):
         image = advData[i]
         image_2 = image
         label = ohe_Model_adv_data_labels[i]
      
     # generate and adversary image for the current image and make a prediction on the adversary
-        adversary = generate_image_adversary(cnn_model, image.reshape(1,28,28,1),label, eps=0.4)
+        adversary = generate_image_adversary(cnn_model, image.reshape(1,28,28,1),label, eps=0.35)
         pred = cnn_model.predict(adversary)
     
     #Scale both the original image and adversary to the range
     # [0,255] and convert them to an unsigned 8-bit integer
         adversary_2 =adversary.reshape(28, 28,1)
+        adversary_3 = adversary.reshape(28,28)
+       
+        adv_arr.append(adversary_3)
         adversary = adversary.reshape((28,28))*255
         adversary = np.clip(adversary, 0, 255).astype("uint8")
         image = image.reshape((28, 28)) * 255
@@ -373,79 +340,105 @@ def main():
         adversaryPred = pred[0].argmax()
         color = (0, 255, 0)
 
-    # if the image prediction does not match the adversarial prediction then update the color
-        if imagePred != adversaryPred:
-            color = (0,0,255)
-        # draw the predictions on the respective output images
-        cv2.putText(image, str(imagePred), (2, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.95, (0, 255, 0), 2)
-        cv2.putText(adversary, str(adversaryPred), (2, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.95, color, 2)
+    # # if the image prediction does not match the adversarial prediction then update the color
+        # if imagePred != adversaryPred:
+            # color = (0,0,255)
+        # # draw the predictions on the respective output images
+        # cv2.putText(image, str(imagePred), (2, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.95, (0, 255, 0), 2)
+        # cv2.putText(adversary, str(adversaryPred), (2, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.95, color, 2)
         
-        # stack the two images horizontally and then show the original image and adversarial image
-        output = np.hstack([image, adversary])
+        # # stack the two images horizontally and then show the original image and adversarial image
+        # output = np.hstack([image, adversary])
     
-        print('Correct and adversarial images')
-        cv2.imshow("FGSM Adversarial Images", output)
-        cv2.waitKey(0)
+        # #print('Correct and adversarial images')
+        # cv2.imshow("CNN FGSM Adversarial Images", output)
+        # cv2.waitKey(0)
 # # --------------------------------------------------------------------------
 
         # Show the prediction that the basic neural network makes for the adversarial image 
         adversary_2 = np.reshape(adversary_2, (-1, 784))        
         adv_pred = model.predict(adversary_2)
-        print('The original value is :',advLabels[i],' The predicted value is :', adv_pred.argmax()) 
-        
+       
+        # adversary_2  = adversary_2 .reshape((28,28))*255
+        # adversary_2  = np.clip(adversary_2 , 0, 255).astype("uint8")
+        # image_2 = image_2.reshape((28, 28)) * 255
+        # image_2= image_2.astype("uint8")
+        # # convert the image and adversarial image from grayscale to three
+        # # channel (so we can draw on them)
+        # image_2 = np.dstack([image_2] * 3)
+        # adversary_2  = np.dstack([adversary_2 ] * 3)
+        # # resize the images so we can better visualize them
+        # image_2 = cv2.resize(image_2, (96, 96))
+        # adversary_2  = cv2.resize(adversary_2 , (96, 96))
     
-        adversary_2  = adversary_2 .reshape((28,28))*255
-        adversary_2  = np.clip(adversary_2 , 0, 255).astype("uint8")
-        image_2 = image_2.reshape((28, 28)) * 255
-        image_2= image_2.astype("uint8")
-        # convert the image and adversarial image from grayscale to three
-        # channel (so we can draw on them)
-        image_2 = np.dstack([image_2] * 3)
-        adversary_2  = np.dstack([adversary_2 ] * 3)
-        # resize the images so we can better visualize them
-        image_2 = cv2.resize(image_2, (96, 96))
-        adversary_2  = cv2.resize(adversary_2 , (96, 96))
-    
-        # determine the predicted label for both the original image and adversarial image
-        imagePred = label.argmax()
-        adversaryPred = adv_pred[0].argmax()
-        color = (0, 255, 0)
+        # # determine the predicted label for both the original image and adversarial image
+        # imagePred = label.argmax()
+        # adversaryPred = adv_pred[0].argmax()
+        # color = (0, 255, 0)
 
-        # if the image prediction does not match the adversarial prediction then update the color
-        if imagePred != adversaryPred:
-            color = (0,0,255)
-        # draw the predictions on the respective output images
-        cv2.putText(image_2, str(imagePred), (2, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.95, (0, 255, 0), 2)
-        cv2.putText(adversary_2, str(adversaryPred), (2, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.95, color, 2)
+        # # if the image prediction does not match the adversarial prediction then update the color
+        # if imagePred != adversaryPred:
+            # color = (0,0,255)
+        # # draw the predictions on the respective output images
+        # cv2.putText(image_2, str(imagePred), (2, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.95, (0, 255, 0), 2)
+        # cv2.putText(adversary_2, str(adversaryPred), (2, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.95, color, 2)
         
-        # stack the two images horizontally and then show the original image and adversarial image
-        output = np.hstack([image_2, adversary_2])
+        # # stack the two images horizontally and then show the original image and adversarial image
+        # output = np.hstack([image_2, adversary_2])
         
-        print('Correct and adversarial images')
-        cv2.imshow("FGSM Adversarial Images", adversary_2)
-        cv2.imshow("FGSM Adversarial Images", output)
-        cv2.waitKey(0)
-  
+        # print('NN Correct and adversarial images')
+        # print('The original value is :',advLabels[i],' The predicted value is :', adv_pred.argmax()) 
+        
+        # cv2.imshow("NN FGSM Adversarial Images", output)
+        # cv2.waitKey(0)
+    
   
   # -------Figure out how to save adversarial images into a batch (list or array) that can be appended to the valData set
   
-  #----------------------------Below here should show the adversarial data incorporated with the test data
-    # (loss, acc) = model.evaluate(x=Model_test_data, y=Model_test_data_labels)
-    # print(loss)
-    # print(acc)
+  # --------------------the actual set of adversarial data will replace the advData set below-----------------------
+    index_counter=[]
+    labels_counter=[]
+    
+    [index_counter ,labels_counter] = class_indices(index_counter,labels_counter, Model_classes, advLabels)
+    adv_arr = np.asarray(adv_arr)
+    
+    print(adv_arr.shape)
+   
+    dataframe_dict = OrderedDict()
+    data_adv = np.reshape(adv_arr, (-1, 784))
+    [dataframe_dict, layer_nodes] = capture_activations(nn_layers, model, data_adv,dataframe_dict, index_counter ,labels_counter)
+
+    # for c in range(1,nn_layers):
+
+
+        # v= index_counter[0]+index_counter[1]+index_counter[2]+index_counter[3]+index_counter[4]+index_counter[5]+index_counter[6]+index_counter[7]+index_counter[8]+index_counter[9]
+        # v_label=labels_counter[0]+labels_counter[1]+labels_counter[2]+labels_counter[3]+labels_counter[4]+labels_counter[5]+labels_counter[6]+labels_counter[7]+labels_counter[8]+labels_counter[9]
+        # arr=np.array(v_label)
+
+        # mapper = umap.UMAP().fit(dataframe_dict[c].iloc[v])        
+        # p=umap.plot.points(mapper, labels=arr,color_key_cmap='Paired', background='black')
+        # var7 = 'ADVLayer_'+str(c)+'_nodes_'+str(layer_nodes[c-1])
+        # umap.plot.plt.title(var7)
+        # umap.plot.plt.show()
   
-    # nn_predictions = model.predict(Model_test_data).argmax(axis=1)
+  
+  #----------------------------Below here should show the adversarial data incorporated with the test data
+    (loss, acc) = model.evaluate(x=data_adv, y=advLabels)
+    print(loss)
+    print(acc)
+  
+    nn_predictions = model.predict(data_adv).argmax(axis=1)
 
-    # print("EVALUATION ON NN Model TESTING DATA")
-    # print(classification_report(Model_test_data_labels, nn_predictions))
+    print("EVALUATION ON NN Model adversarial DATA")
+    print(classification_report(advLabels, nn_predictions))
 
 
-    # nn_cm = pd.DataFrame(confusion_matrix(Model_test_data_labels, nn_predictions), 
-                      # columns=Model_classes, index = Model_classes)
+    nn_cm = pd.DataFrame(confusion_matrix(advLabels, nn_predictions), 
+                      columns=Model_classes, index = Model_classes)
 
-    # # Seaborn's heatmap to better visualize the confusion matrix
-    # sns.heatmap(nn_cm, annot=True, fmt='d', linewidths = 0.30)
-    # pyplot.show()
+    # Seaborn's heatmap to better visualize the confusion matrix
+    sns.heatmap(nn_cm, annot=True, fmt='d', linewidths = 0.30)
+    pyplot.show()
   
 if  __name__ == "__main__":
     main()
