@@ -408,18 +408,18 @@ def main():
     data_adv = np.reshape(adv_arr, (-1, 784))
     [dataframe_dict, layer_nodes] = capture_activations(nn_layers, model, data_adv,dataframe_dict, index_counter ,labels_counter)
 
-    # for c in range(1,nn_layers):
+    for c in range(1,nn_layers):
 
 
-        # v= index_counter[0]+index_counter[1]+index_counter[2]+index_counter[3]+index_counter[4]+index_counter[5]+index_counter[6]+index_counter[7]+index_counter[8]+index_counter[9]
-        # v_label=labels_counter[0]+labels_counter[1]+labels_counter[2]+labels_counter[3]+labels_counter[4]+labels_counter[5]+labels_counter[6]+labels_counter[7]+labels_counter[8]+labels_counter[9]
-        # arr=np.array(v_label)
+        v= index_counter[0]+index_counter[1]+index_counter[2]+index_counter[3]+index_counter[4]+index_counter[5]+index_counter[6]+index_counter[7]+index_counter[8]+index_counter[9]
+        v_label=labels_counter[0]+labels_counter[1]+labels_counter[2]+labels_counter[3]+labels_counter[4]+labels_counter[5]+labels_counter[6]+labels_counter[7]+labels_counter[8]+labels_counter[9]
+        arr=np.array(v_label)
 
-        # mapper = umap.UMAP().fit(dataframe_dict[c].iloc[v])        
-        # p=umap.plot.points(mapper, labels=arr,color_key_cmap='Paired', background='black')
-        # var7 = 'ADVLayer_'+str(c)+'_nodes_'+str(layer_nodes[c-1])
-        # umap.plot.plt.title(var7)
-        # umap.plot.plt.show()
+        mapper = umap.UMAP().fit(dataframe_dict[c].iloc[v])        
+        p=umap.plot.points(mapper, labels=arr,color_key_cmap='Paired', background='black')
+        var7 = 'ADVLayer_'+str(c)+'_nodes_'+str(layer_nodes[c-1])
+        umap.plot.plt.title(var7)
+        umap.plot.plt.show()
   
   
   #----------------------------Below here should show the adversarial data incorporated with the test data
