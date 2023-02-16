@@ -226,8 +226,7 @@ def main():
     tf.random.set_seed(10)
 
     (Model_training_data, Model_training_data_labels), (Model_test_data, Model_test_data_labels) = eval(tfds.list_builders()[dataset_to_model]+'.load_data()')
-    print(Model_training_data.shape)
-    print(type(Model_training_data))
+    
     Model_classes = np.unique(Model_training_data_labels)
     print('model classes: ', Model_classes)
     total_number_of_classes = len(Model_classes)
@@ -249,10 +248,13 @@ def main():
     advData=advData/255.0
     Model_test_data = Model_test_data/255.0
     
+    Model_test_data_2 = Model_test_data
+    
     # add a channel dimension to the images
     Model_training_data = np.expand_dims(Model_training_data, axis=-1)
     advData = np.expand_dims(advData, axis=-1)
     Model_test_data = np.expand_dims(Model_test_data, axis=-1)
+    
 
     # one-hot encode our labels
     ohe_Model_training_data_labels = to_categorical(Model_training_data_labels, 10)
@@ -393,9 +395,8 @@ def main():
         # cv2.waitKey(0)
     
   
-  # -------Figure out how to save adversarial images into a batch (list or array) that can be appended to the valData set
   
-  # --------------------the actual set of adversarial data will replace the advData set below-----------------------
+  # --------------------------------------------------------------------------------------------------
     index_counter=[]
     labels_counter=[]
     
@@ -404,25 +405,27 @@ def main():
     
     print(adv_arr.shape)
    
+    test_adv_data= np.append(Model_test_data_2 , adv_arr, axis =0)
+    
     dataframe_dict = OrderedDict()
     data_adv = np.reshape(adv_arr, (-1, 784))
-    [dataframe_dict, layer_nodes] = capture_activations(nn_layers, model, data_adv,dataframe_dict, index_counter ,labels_counter)
+    # [dataframe_dict, layer_nodes] = capture_activations(nn_layers, model, data_adv,dataframe_dict, index_counter ,labels_counter)
 
-    for c in range(1,nn_layers):
+    # for c in range(1,nn_layers):
 
 
-        v= index_counter[0]+index_counter[1]+index_counter[2]+index_counter[3]+index_counter[4]+index_counter[5]+index_counter[6]+index_counter[7]+index_counter[8]+index_counter[9]
-        v_label=labels_counter[0]+labels_counter[1]+labels_counter[2]+labels_counter[3]+labels_counter[4]+labels_counter[5]+labels_counter[6]+labels_counter[7]+labels_counter[8]+labels_counter[9]
-        arr=np.array(v_label)
+        # v= index_counter[0]+index_counter[1]+index_counter[2]+index_counter[3]+index_counter[4]+index_counter[5]+index_counter[6]+index_counter[7]+index_counter[8]+index_counter[9]
+        # v_label=labels_counter[0]+labels_counter[1]+labels_counter[2]+labels_counter[3]+labels_counter[4]+labels_counter[5]+labels_counter[6]+labels_counter[7]+labels_counter[8]+labels_counter[9]
+        # arr=np.array(v_label)
 
-        mapper = umap.UMAP().fit(dataframe_dict[c].iloc[v])        
-        p=umap.plot.points(mapper, labels=arr,color_key_cmap='Paired', background='black')
-        var7 = 'ADVLayer_'+str(c)+'_nodes_'+str(layer_nodes[c-1])
-        umap.plot.plt.title(var7)
-        umap.plot.plt.show()
+        # mapper = umap.UMAP().fit(dataframe_dict[c].iloc[v])        
+        # p=umap.plot.points(mapper, labels=arr,color_key_cmap='Paired', background='black')
+        # var7 = 'ADVLayer_'+str(c)+'_nodes_'+str(layer_nodes[c-1])
+        # umap.plot.plt.title(var7)
+        # umap.plot.plt.show()
   
   
-  #----------------------------Below here should show the adversarial data incorporated with the test data
+  #-------------------------------------------------------------------------------------------------
     (loss, acc) = model.evaluate(x=data_adv, y=advLabels)
     print(loss)
     print(acc)
@@ -439,6 +442,32 @@ def main():
     # Seaborn's heatmap to better visualize the confusion matrix
     sns.heatmap(nn_cm, annot=True, fmt='d', linewidths = 0.30)
     pyplot.show()
-  
+    
+# -----------------------------------------------------------------------------------------
+
+# Combine the adversarial data with the validation data
+    
+    test_adv_labels = np.append(Model_test_data_labels, advLabels)
+    test_adv_data = np.reshape(test_adv_data, (-1, 784))
+
+    (loss, acc) = model.evaluate(x=test_adv_data, y=test_adv_labels)
+    print(loss)
+    print(acc)
+    
+    nn_predictions = model.predict(test_adv_data).argmax(axis=1)
+
+    print("EVALUATION ON NN Model test and adversarial DATA")
+    print(classification_report(test_adv_labels, nn_predictions))
+
+
+    nn_cm = pd.DataFrame(confusion_matrix(test_adv_labels, nn_predictions), 
+                      columns=Model_classes, index = Model_classes)
+
+    # Seaborn's heatmap to better visualize the confusion matrix
+    sns.heatmap(nn_cm, annot=True, fmt='d', linewidths = 0.30)
+    pyplot.show()
+
+#--------------------------------------------------------------------
+
 if  __name__ == "__main__":
     main()
