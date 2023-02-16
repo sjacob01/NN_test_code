@@ -344,86 +344,90 @@ def main():
 #---------------------------------------------------------------------------------
 # Create an adversarial image using the CNN model
    # get the current image and label
-    image = advData[5]
-    image_2 =image
-    label = ohe_Model_adv_data_labels[5]
-   
+    for i in range(1,3):
+        image = advData[i]
+        image_2 = image
+        label = ohe_Model_adv_data_labels[i]
+     
     # generate and adversary image for the current image and make a prediction on the adversary
-    adversary = generate_image_adversary(cnn_model, image.reshape(1,28,28,1),label, eps=0.4)
-    pred = cnn_model.predict(adversary)
+        adversary = generate_image_adversary(cnn_model, image.reshape(1,28,28,1),label, eps=0.4)
+        pred = cnn_model.predict(adversary)
     
     #Scale both the original image and adversary to the range
     # [0,255] and convert them to an unsigned 8-bit integer
-    adversary_2 =adversary.reshape(28, 28,1)
-    adversary = adversary.reshape((28,28))*255
-    adversary = np.clip(adversary, 0, 255).astype("uint8")
-    image = image.reshape((28, 28)) * 255
-    image = image.astype("uint8")
-    # convert the image and adversarial image from grayscale to three
-    # channel (so we can draw on them)
-    image = np.dstack([image] * 3)
-    adversary = np.dstack([adversary] * 3)
-    # resize the images so we can better visualize them
-    image = cv2.resize(image, (96, 96))
-    adversary = cv2.resize(adversary, (96, 96))
- 
+        adversary_2 =adversary.reshape(28, 28,1)
+        adversary = adversary.reshape((28,28))*255
+        adversary = np.clip(adversary, 0, 255).astype("uint8")
+        image = image.reshape((28, 28)) * 255
+        image = image.astype("uint8")
+        # convert the image and adversarial image from grayscale to three
+        # channel (so we can draw on them)
+        image = np.dstack([image] * 3)
+        adversary = np.dstack([adversary] * 3)
+        # resize the images so we can better visualize them
+        image = cv2.resize(image, (96, 96))
+        adversary = cv2.resize(adversary, (96, 96))
+     
     # determine the predicted label for both the original image and adversarial image
-    imagePred = label.argmax()
-    adversaryPred = pred[0].argmax()
-    color = (0, 255, 0)
+        imagePred = label.argmax()
+        adversaryPred = pred[0].argmax()
+        color = (0, 255, 0)
 
     # if the image prediction does not match the adversarial prediction then update the color
-    if imagePred != adversaryPred:
-        color = (0,0,255)
-    # draw the predictions on the respective output images
-    cv2.putText(image, str(imagePred), (2, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.95, (0, 255, 0), 2)
-    cv2.putText(adversary, str(adversaryPred), (2, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.95, color, 2)
+        if imagePred != adversaryPred:
+            color = (0,0,255)
+        # draw the predictions on the respective output images
+        cv2.putText(image, str(imagePred), (2, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.95, (0, 255, 0), 2)
+        cv2.putText(adversary, str(adversaryPred), (2, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.95, color, 2)
+        
+        # stack the two images horizontally and then show the original image and adversarial image
+        output = np.hstack([image, adversary])
     
-    # stack the two images horizontally and then show the original image and adversarial image
-    output = np.hstack([image, adversary])
-    
-    print('Correct and adversarial images')
-    cv2.imshow("FGSM Adversarial Images", output)
-    cv2.waitKey(0)
-# --------------------------
-# Show the prediction that the basic neural network makes for the adversarial image 
-    adversary_2 = np.reshape(adversary_2, (-1, 784))        
-    adv_pred = model.predict(adversary_2)
-    print('The original value is :',advLabels[5],' The predicted value is :', adv_pred.argmax()) 
-    
-    
-    adversary_2  = adversary_2 .reshape((28,28))*255
-    adversary_2  = np.clip(adversary_2 , 0, 255).astype("uint8")
-    image_2 = image_2.reshape((28, 28)) * 255
-    image_2= image_2.astype("uint8")
-    # convert the image and adversarial image from grayscale to three
-    # channel (so we can draw on them)
-    image_2 = np.dstack([image_2] * 3)
-    adversary_2  = np.dstack([adversary_2 ] * 3)
-    # resize the images so we can better visualize them
-    image_2 = cv2.resize(image_2, (96, 96))
-    adversary_2  = cv2.resize(adversary_2 , (96, 96))
-    
-    # determine the predicted label for both the original image and adversarial image
-    imagePred = label.argmax()
-    adversaryPred = adv_pred[0].argmax()
-    color = (0, 255, 0)
+        print('Correct and adversarial images')
+        cv2.imshow("FGSM Adversarial Images", output)
+        cv2.waitKey(0)
+# # --------------------------------------------------------------------------
 
-    # if the image prediction does not match the adversarial prediction then update the color
-    if imagePred != adversaryPred:
-        color = (0,0,255)
-    # draw the predictions on the respective output images
-    cv2.putText(image_2, str(imagePred), (2, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.95, (0, 255, 0), 2)
-    cv2.putText(adversary_2, str(adversaryPred), (2, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.95, color, 2)
+        # Show the prediction that the basic neural network makes for the adversarial image 
+        adversary_2 = np.reshape(adversary_2, (-1, 784))        
+        adv_pred = model.predict(adversary_2)
+        print('The original value is :',advLabels[i],' The predicted value is :', adv_pred.argmax()) 
+        
     
-    # stack the two images horizontally and then show the original image and adversarial image
-    output = np.hstack([image_2, adversary_2])
+        adversary_2  = adversary_2 .reshape((28,28))*255
+        adversary_2  = np.clip(adversary_2 , 0, 255).astype("uint8")
+        image_2 = image_2.reshape((28, 28)) * 255
+        image_2= image_2.astype("uint8")
+        # convert the image and adversarial image from grayscale to three
+        # channel (so we can draw on them)
+        image_2 = np.dstack([image_2] * 3)
+        adversary_2  = np.dstack([adversary_2 ] * 3)
+        # resize the images so we can better visualize them
+        image_2 = cv2.resize(image_2, (96, 96))
+        adversary_2  = cv2.resize(adversary_2 , (96, 96))
     
-    print('Correct and adversarial images')
-    cv2.imshow("FGSM Adversarial Images", adversary_2)
-    cv2.imshow("FGSM Adversarial Images", output)
-    cv2.waitKey(0)
+        # determine the predicted label for both the original image and adversarial image
+        imagePred = label.argmax()
+        adversaryPred = adv_pred[0].argmax()
+        color = (0, 255, 0)
+
+        # if the image prediction does not match the adversarial prediction then update the color
+        if imagePred != adversaryPred:
+            color = (0,0,255)
+        # draw the predictions on the respective output images
+        cv2.putText(image_2, str(imagePred), (2, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.95, (0, 255, 0), 2)
+        cv2.putText(adversary_2, str(adversaryPred), (2, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.95, color, 2)
+        
+        # stack the two images horizontally and then show the original image and adversarial image
+        output = np.hstack([image_2, adversary_2])
+        
+        print('Correct and adversarial images')
+        cv2.imshow("FGSM Adversarial Images", adversary_2)
+        cv2.imshow("FGSM Adversarial Images", output)
+        cv2.waitKey(0)
   
+  
+  # -------Figure out how to save adversarial images into a batch (list or array) that can be appended to the valData set
   
   #----------------------------Below here should show the adversarial data incorporated with the test data
     # (loss, acc) = model.evaluate(x=Model_test_data, y=Model_test_data_labels)
