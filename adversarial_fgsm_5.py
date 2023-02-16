@@ -403,8 +403,6 @@ def main():
     [index_counter ,labels_counter] = class_indices(index_counter,labels_counter, Model_classes, advLabels)
     adv_arr = np.asarray(adv_arr)
     
-    print(adv_arr.shape)
-   
     test_adv_data= np.append(Model_test_data_2 , adv_arr, axis =0)
     
     dataframe_dict = OrderedDict()
@@ -468,6 +466,30 @@ def main():
     pyplot.show()
 
 #--------------------------------------------------------------------
+    index_counter=[]
+    labels_counter=[]
+    
+    [index_counter ,labels_counter] = class_indices(index_counter,labels_counter, Model_classes, test_adv_labels)
+  
+    dataframe_dict = OrderedDict()
+    test_adv_data = np.reshape(test_adv_data, (-1, 784))
+    [dataframe_dict, layer_nodes] = capture_activations(nn_layers, model, test_adv_data,dataframe_dict, index_counter ,labels_counter)
+
+    for c in range(1,nn_layers):
+
+
+        v= index_counter[0]+index_counter[1]+index_counter[2]+index_counter[3]+index_counter[4]+index_counter[5]+index_counter[6]+index_counter[7]+index_counter[8]+index_counter[9]
+        v_label=labels_counter[0]+labels_counter[1]+labels_counter[2]+labels_counter[3]+labels_counter[4]+labels_counter[5]+labels_counter[6]+labels_counter[7]+labels_counter[8]+labels_counter[9]
+        arr=np.array(v_label)
+
+        mapper = umap.UMAP().fit(dataframe_dict[c].iloc[v])        
+        p=umap.plot.points(mapper, labels=arr,color_key_cmap='Paired', background='black')
+        var7 = 'ADVLayer_'+str(c)+'_nodes_'+str(layer_nodes[c-1])
+        umap.plot.plt.title(var7)
+        umap.plot.plt.show()
+  
+
+
 
 if  __name__ == "__main__":
     main()
