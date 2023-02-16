@@ -372,6 +372,20 @@ def main():
     print(loss)
     print(acc)
   
+    nn_predictions = model.predict(Model_test_data).argmax(axis=1)
+
+    print("EVALUATION ON NN Model TESTING DATA")
+    print(classification_report(Model_test_data_labels, nn_predictions))
+
+
+    nn_cm = pd.DataFrame(confusion_matrix(Model_test_data_labels, nn_predictions), 
+                      columns=Model_classes, index = Model_classes)
+
+    # Seaborn's heatmap to better visualize the confusion matrix
+    sns.heatmap(nn_cm, annot=True, fmt='d', linewidths = 0.30)
+    pyplot.show()
+    
+  
     adversary_2 = np.reshape(adversary_2, (-1, 784))        
     adv_pred = model.predict(adversary_2)
     print(adv_pred.argmax()) 
